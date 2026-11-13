@@ -7,6 +7,7 @@ This version reworks a lot of the core control mechanisms and adds Setpoint Smoo
 
 ### Recent additions
 - LED status bar can now be disabled above a configurable speed while still allowing duty/current utilization indicators to remain active
+- Above the SOC cutoff, a green status bar indicates regenerative battery current, scaled to the configured regen-current limit
 - New GUI options for the LED speed cutoff and enable/disable toggle
 - Improved compatibility with config restore workflows when new settings are introduced
 
