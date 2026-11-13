@@ -1089,13 +1089,13 @@ static void refloat_thd(void *arg) {
 #define SERIALIZED_CONFIG_LENGTH 320
 #endif
 
-static void write_cfg_to_eeprom(Data *d) {
+static bool write_cfg_to_eeprom(Data *d) {
     const size_t words = (SERIALIZED_CONFIG_LENGTH - 1) / 4 + 1;
     const size_t bufsize = words * 4;
     uint32_t *buffer = VESC_IF->malloc(bufsize);
     if (!buffer) {
         log_error("Failed to write config: Out of memory.");
-        return;
+        return false;
     }
     memset(buffer, 0, bufsize);
 
@@ -1103,6 +1103,7 @@ static void write_cfg_to_eeprom(Data *d) {
     if (written_bytes > bufsize) {
         log_error("Config write buffer overflow, terminating.");
         fatal_error_terminate();
+        return false;
     }
 
     bool write_ok = true;
@@ -1124,6 +1125,8 @@ static void write_cfg_to_eeprom(Data *d) {
     } else {
         log_error("Failed to write config.");
     }
+
+    return write_ok;
 }
 
 static void aux_thd(void *arg) {
@@ -2673,8 +2676,11 @@ static bool set_cfg(uint8_t *buffer) {
 
     // Store to EEPROM
     if (res) {
-        write_cfg_to_eeprom(d);
-        configure(d);
+        if (write_cfg_to_eeprom(d)) {
+            configure(d);
+        } else {
+            res = false;
+        }
     }
 
     return res;

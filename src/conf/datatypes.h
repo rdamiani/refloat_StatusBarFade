@@ -132,6 +132,7 @@ typedef struct {
     uint16_t idle_timeout;
     bool disable_soc_above_speed;
     float speed_off_threshold;
+    bool show_regen_current;
     float motor_utilization_threshold;
     float red_bar_percentage;
     bool show_sensors_while_running;
