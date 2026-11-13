@@ -80,6 +80,7 @@ static const uint32_t colors[] = {
 #define DUTY_COLOR 0x00FFB030
 #define MOTOR_CURRENT_COLOR 0x00FF5090
 #define BATTERY_CURRENT_COLOR 0x0000FF80
+#define REGEN_CURRENT_COLOR 0x0000FF00
 #define FOOTPAD_SENSOR_COLOR 0x0000C0FF
 #define RED_BAR_COLOR 0x00FF3828
 #define BATTERY10_BAR_COLOR 0x00FF5038
@@ -577,6 +578,14 @@ static void status_animate(
         leds->cfg->status.disable_soc_above_speed &&
         (soc_off_by_speed ||
          (leds->status_soc_blend < 0.5f && moving && speed_kph > soc_on_threshold));
+    const float regen_current = fmaxf(0.0f, -motor->batt_current.value);
+    const bool regen_active =
+        leds->state.state == STATE_RUNNING && leds->state.mode != MODE_FLYWHEEL &&
+        motor->battery_current_min > 0.0f && regen_current > 1.0f; //1 AMP threshold to avoid flicker
+    const bool regen_override = soc_should_be_off && regen_active;
+    const float regen_saturation = motor->battery_current_min > 0.0f
+        ? clampf(regen_current / motor->battery_current_min, 0.0f, 1.0f)
+        : 0.0f;
 
     float target_soc_blend = 1.0f;
     if (leds->cfg->status.disable_soc_above_speed) {
@@ -601,7 +610,7 @@ static void status_animate(
         soc_blend = 0.0f;
     }
 
-    if (soc_should_be_off && leds->status_utilization_blend <= 0.0f) {
+    if (soc_should_be_off && !regen_override && leds->status_utilization_blend <= 0.0f) {
         strip_set_color(leds, strip, 0x00000000, 0.0f, 1.0f);
         return;
     }
@@ -660,6 +669,12 @@ static void status_animate(
 
         if (leds->left_sensor > 0.0f || leds->right_sensor > 0.0f) {
             anim_fs_state(leds, strip, reverse, blend);
+        }
+
+        if (regen_override) {
+            anim_progress_bar(
+                leds, strip, regen_saturation, REGEN_CURRENT_COLOR, true, reverse, blend
+            );
         }
     }
 
