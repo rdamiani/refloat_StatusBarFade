@@ -582,7 +582,7 @@ static void status_animate(
     const bool regen_active =
         leds->state.state == STATE_RUNNING && leds->state.mode != MODE_FLYWHEEL &&
         motor->battery_current_min > 0.0f && regen_current > 1.0f; //1 AMP threshold to avoid flicker
-    const bool regen_override = soc_should_be_off && regen_active;
+    const bool regen_override = regen_active;
     const float regen_saturation = motor->battery_current_min > 0.0f
         ? clampf(regen_current / motor->battery_current_min, 0.0f, 1.0f)
         : 0.0f;
